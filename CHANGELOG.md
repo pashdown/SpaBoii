@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.1] - 2026-04-06
+### Fixed
+- Zeroconf advertisement now uses only the default-route interface (`InterfaceChoice.Default`) instead of all interfaces — eliminates ENOKEY errors on WireGuard/VPN interfaces that don't support multicast
+
 ## [2.1.0] - 2026-04-06
 ### Fixed
 - Spa discovery: cache last known IP/port to `/data/spa_last_known.json` and try it first on startup — avoids full subnet scan on every restart and is resilient to DHCP address changes within reason

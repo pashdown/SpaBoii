@@ -9,7 +9,7 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from zeroconf import ServiceInfo, Zeroconf
+from zeroconf import InterfaceChoice, ServiceInfo, Zeroconf
 
 from api_server import start as start_api_server
 from spa_bridge import SpaBridge
@@ -154,24 +154,37 @@ def _install_integration():
     return True
 
 
-def _advertise_zeroconf(port: int = 8099):
-    """Advertise the SpaBoii API via mDNS so HA auto-discovers the integration."""
+def _default_route_ip() -> str | None:
+    """Return the IP of the default-route interface (the one that reaches the LAN)."""
     try:
-        local_ips = _all_local_ips()
-        if not local_ips:
-            print("Zeroconf: no local IPs found, skipping advertisement")
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return None
+
+
+def _advertise_zeroconf(port: int = 8099):
+    """Advertise the SpaBoii API via mDNS so HA auto-discovers the integration.
+
+    Uses only the default-route interface to avoid ENOKEY errors on VPN/Docker
+    interfaces that don't support multicast.
+    """
+    try:
+        ip = _default_route_ip()
+        if not ip:
+            print("Zeroconf: could not determine default-route IP, skipping")
             return
-        addresses = [socket.inet_aton(ip) for ip in local_ips]
         info = ServiceInfo(
             "_spaboii._tcp.local.",
             "SpaBoii._spaboii._tcp.local.",
-            addresses=addresses,
+            addresses=[socket.inet_aton(ip)],
             port=port,
             properties={"version": "2.0.1"},
         )
-        zc = Zeroconf()
+        zc = Zeroconf(interfaces=InterfaceChoice.Default)
         zc.register_service(info)
-        print(f"Zeroconf: advertised SpaBoii on port {port} ({local_ips})")
+        print(f"Zeroconf: advertised SpaBoii on port {port} ({ip})")
     except Exception as e:
         print(f"Zeroconf advertisement failed (non-fatal): {e}")
 
