@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.6] - 2026-04-06
+### Removed
+- Deleted all legacy root-level files from original MQTT-based fork:
+  `SpaBoii.py`, `HA_auto_mqtt.py`, `requirements.txt`, `Dockerfile`,
+  `TODO.md`, `SETUP.txt`, `bytebuffer.py`, `levven_packet.py`,
+  `proto/`, `API/`, `misc/`
+
 ## [2.0.5] - 2026-04-06
 ### Changed
 - Replaced generated icon with native 256×256 Arctic Spas logo (arcticspas-256.png)
