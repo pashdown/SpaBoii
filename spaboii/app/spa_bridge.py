@@ -67,12 +67,17 @@ class SpaBridge:
         pckt = LevvenPacket(message_type, bytearray())
         client.sendall(pckt.serialize())
 
+    def _hex(self, data: bytes) -> str:
+        return " ".join(f"{b:02X}" for b in data)
+
     def _send_command(self, client: socket.socket, spacmd):
         buf = spacmd.SerializeToString()
         pckt = LevvenPacket(MessageType.COMMAND.value, buf)
+        raw = pckt.serialize()
         if self.debug:
-            print(f"Sending COMMAND packet ({len(buf)} bytes)")
-        client.sendall(pckt.serialize())
+            print(f"TX COMMAND proto ({len(buf)}b): {self._hex(buf)}")
+            print(f"TX Levven packet ({len(raw)}b): {self._hex(raw)}")
+        client.sendall(raw)
         time.sleep(0.5)
 
     # ------------------------------------------------------------------
@@ -314,7 +319,7 @@ class SpaBridge:
                     lights = action.get("lights")
                     if lights is not None:
                         print(f"Command: lights={lights}")
-                        spacmd.set_lights = 1 if lights == "ON" else 0
+                        spacmd.set_lights = lights == "ON"
                         cmd_sent = True
 
                     blower1 = action.get("blower1")
@@ -332,7 +337,7 @@ class SpaBridge:
                     boost = action.get("boost")
                     if boost is not None:
                         print("Command: boost")
-                        spacmd.set_onzen = 1
+                        spacmd.spaboy_boost = True
                         cmd_sent = True
 
                     if cmd_sent:
@@ -362,6 +367,8 @@ class SpaBridge:
                     if not data:
                         print("Spa closed connection")
                         return False
+                    if self.debug:
+                        print(f"RX ({len(data)}b): {self._hex(data)}")
                     self._process_bytes(data)
                 except socket.timeout:
                     continue

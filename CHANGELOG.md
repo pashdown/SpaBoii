@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.4] - 2026-04-06
+### Fixed
+- `set_lights` was setting an integer on a bool proto field — now uses `True`/`False`
+- Boost command was setting `set_onzen` (enables Spa Boy) instead of `spaboy_boost`
+### Added
+- Debug mode now logs hex dump of every TX command (proto bytes + full Levven frame) and every RX chunk — enables full wire-level visibility without tcpdump
+
 ## [2.1.3] - 2026-04-06
 ### Fixed
 - Wrap CMD with `with-contenv` so s6-overlay passes Docker environment variables (including PYTHONUNBUFFERED) to the Python process; add `-u` as an explicit fallback for unbuffered output
