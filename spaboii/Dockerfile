@@ -13,4 +13,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY app/ .
 COPY integration/ /integration/
 
-CMD ["python3", "main.py"]
+CMD ["/usr/bin/with-contenv", "python3", "-u", "main.py"]

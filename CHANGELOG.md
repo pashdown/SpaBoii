@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.3] - 2026-04-06
+### Fixed
+- Wrap CMD with `with-contenv` so s6-overlay passes Docker environment variables (including PYTHONUNBUFFERED) to the Python process; add `-u` as an explicit fallback for unbuffered output
+
 ## [2.1.2] - 2026-04-06
 ### Fixed
 - Add `ENV PYTHONUNBUFFERED=1` to Dockerfile so Python crash output is never lost in s6 logs
