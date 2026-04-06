@@ -45,17 +45,13 @@ Go to the add-on's **Configuration** tab and set:
 
 Click **Start**. Check the **Log** tab to confirm the spa was found and connected.
 
-### Step 3 — Install the Custom Integration
+### Step 3 — Restart Home Assistant
 
-On your Home Assistant machine via SSH or terminal:
+The add-on automatically installs the custom integration into `/config/custom_components/spaboii` on first start. After starting the add-on, restart Home Assistant once to load it:
 
-```bash
-wget -q https://github.com/pashdown/SpaBoii/archive/refs/heads/main.zip -O /tmp/spaboii.zip \
-  && unzip -q /tmp/spaboii.zip -d /tmp \
-  && cp -r /tmp/SpaBoii-main/custom_components/spaboii /config/custom_components/ \
-  && rm -rf /tmp/spaboii.zip /tmp/SpaBoii-main
-ha core restart
-```
+**Settings → System → Restart Home Assistant**
+
+The add-on will also update the integration automatically whenever a new version is released — just update the add-on and restart HA.
 
 ### Step 4 — Add the Integration
 

@@ -3,6 +3,7 @@ import json
 import os
 import queue
 import re
+import shutil
 import socket
 import subprocess
 import time
@@ -15,6 +16,8 @@ from spa_bridge import SpaBridge
 from state_store import StateStore
 
 OPTIONS_PATH = "/data/options.json"
+INTEGRATION_SRC = "/integration"
+INTEGRATION_DEST = "/config/custom_components/spaboii"
 
 # Known TCP ports used by Arctic Spa controllers across different models/firmware.
 # 12121 is common on newer units; 65534 on older ones.
@@ -101,6 +104,38 @@ def discover_spa(ports: list[int]) -> tuple[str, int] | None:
     return None
 
 
+def _install_integration():
+    """Copy the bundled custom integration to /config/custom_components/spaboii.
+    Returns True if files were updated (HA restart required), False if already current.
+    """
+    if not os.path.isdir(INTEGRATION_SRC):
+        print("Integration bundle not found — skipping auto-install")
+        return False
+
+    # Read bundled version
+    bundled_manifest = os.path.join(INTEGRATION_SRC, "manifest.json")
+    with open(bundled_manifest) as f:
+        bundled_version = json.load(f).get("version", "0")
+
+    # Read installed version (if any)
+    installed_manifest = os.path.join(INTEGRATION_DEST, "manifest.json")
+    installed_version = None
+    if os.path.exists(installed_manifest):
+        with open(installed_manifest) as f:
+            installed_version = json.load(f).get("version", "0")
+
+    if bundled_version == installed_version:
+        print(f"Integration already up to date (v{installed_version})")
+        return False
+
+    print(f"Installing integration v{bundled_version} → {INTEGRATION_DEST}")
+    if os.path.exists(INTEGRATION_DEST):
+        shutil.rmtree(INTEGRATION_DEST)
+    shutil.copytree(INTEGRATION_SRC, INTEGRATION_DEST)
+    print("Integration installed. Please restart Home Assistant to activate it.")
+    return True
+
+
 def _advertise_zeroconf(port: int = 8099):
     """Advertise the SpaBoii API via mDNS so HA auto-discovers the integration."""
     try:
@@ -150,6 +185,8 @@ def main():
         if not spa_port:
             print(f"ERROR: Could not reach {spa_ip} on any known port {KNOWN_SPA_PORTS}. Set spa_port manually.")
             raise SystemExit(1)
+
+    _install_integration()
 
     state_store = StateStore()
     cmd_queue = queue.Queue()

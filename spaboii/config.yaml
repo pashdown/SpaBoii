@@ -12,6 +12,8 @@ arch:
 startup: application
 boot: auto
 host_network: true
+map:
+  - config:rw
 options:
   spa_ip: ""
   spa_port: 0
