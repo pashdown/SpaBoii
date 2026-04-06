@@ -1,4 +1,5 @@
-*.yaml
+# Ignore private settings only
+settings.yaml
 #ignore pycache
 __pycache__/
 # Ignore node_modules directory
@@ -27,5 +28,3 @@ temp/
 .DS_Store
 Thumbs.db
 
-# Ignore private settings
-settings.yaml

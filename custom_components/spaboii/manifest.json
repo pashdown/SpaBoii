@@ -1,0 +1,11 @@
+{
+  "domain": "spaboii",
+  "name": "SpaBoii Arctic Spa",
+  "version": "2.0.0",
+  "codeowners": ["@pashdown"],
+  "config_flow": true,
+  "dependencies": [],
+  "requirements": [],
+  "iot_class": "local_polling",
+  "homeassistant": "2024.1.0"
+}

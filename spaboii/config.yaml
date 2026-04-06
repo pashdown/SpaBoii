@@ -1,0 +1,22 @@
+name: SpaBoii
+description: Arctic Spa hot tub bridge for Home Assistant. No MQTT broker required.
+version: "2.0.0"
+slug: spaboii
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+startup: application
+boot: auto
+host_network: true
+options:
+  spa_ip: ""
+  api_secret: ""
+  log_level: "info"
+schema:
+  spa_ip: str
+  api_secret: str
+  log_level: list(debug|info|warning|error)

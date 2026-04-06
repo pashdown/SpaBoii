@@ -1,0 +1,8 @@
+DOMAIN = "spaboii"
+
+CONF_HOST = "host"
+CONF_PORT = "port"
+CONF_API_SECRET = "api_secret"
+
+DEFAULT_PORT = 8099
+SCAN_INTERVAL_SECONDS = 3

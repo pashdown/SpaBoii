@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to SpaBoii Add-On",
+        "description": "Enter the connection details for the SpaBoii add-on running on your Home Assistant machine.",
+        "data": {
+          "host": "Host (IP or hostname of your HA machine)",
+          "port": "Port (default: 8099)",
+          "api_secret": "API Secret (from add-on configuration)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the SpaBoii add-on. Make sure it is installed and running.",
+      "invalid_auth": "Invalid API secret.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "SpaBoii is already configured."
+    }
+  }
+}
