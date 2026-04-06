@@ -2,7 +2,9 @@ import ipaddress
 import json
 import os
 import queue
+import re
 import socket
+import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -28,13 +30,30 @@ def load_options() -> dict:
     }
 
 
-def _local_ip() -> str | None:
+def _all_local_ips() -> list[str]:
+    """Return all IPv4 addresses assigned to local interfaces."""
+    ips = []
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            return s.getsockname()[0]
+        result = subprocess.run(
+            ["ip", "-4", "addr", "show"],
+            capture_output=True, text=True, timeout=5
+        )
+        ips = re.findall(r"inet (\d+\.\d+\.\d+\.\d+)/\d+", result.stdout)
+        # Filter out loopback
+        ips = [ip for ip in ips if not ip.startswith("127.")]
     except Exception:
-        return None
+        pass
+
+    if not ips:
+        # Fallback: use default-route interface only
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("8.8.8.8", 80))
+                ips = [s.getsockname()[0]]
+        except Exception:
+            pass
+
+    return ips
 
 
 def _try_connect(ip: str, port: int, timeout: float = 0.5) -> tuple[str, int] | None:
@@ -46,14 +65,24 @@ def _try_connect(ip: str, port: int, timeout: float = 0.5) -> tuple[str, int] | 
 
 
 def discover_spa(ports: list[int]) -> tuple[str, int] | None:
-    local = _local_ip()
-    if not local:
-        print("Could not determine local IP for discovery.")
+    local_ips = _all_local_ips()
+    if not local_ips:
+        print("Could not determine local IPs for discovery.")
         return None
 
-    network = ipaddress.ip_network(f"{local}/24", strict=False)
-    candidates = [str(ip) for ip in network.hosts() if str(ip) != local]
-    print(f"Scanning {len(candidates)} addresses on {network} for spa (ports {ports})...")
+    # Build unique set of candidate IPs across all local subnets
+    seen_networks = set()
+    candidates = []
+    for local in local_ips:
+        network = ipaddress.ip_network(f"{local}/24", strict=False)
+        if network in seen_networks:
+            continue
+        seen_networks.add(network)
+        candidates.extend(
+            str(ip) for ip in network.hosts() if str(ip) != local
+        )
+
+    print(f"Scanning {len(candidates)} addresses across {list(seen_networks)} for spa (ports {ports})...")
 
     with ThreadPoolExecutor(max_workers=64) as executor:
         futures = {
