@@ -16,6 +16,7 @@ from spa_bridge import SpaBridge
 from state_store import StateStore
 
 OPTIONS_PATH = "/data/options.json"
+LAST_KNOWN_PATH = "/data/spa_last_known.json"
 INTEGRATION_SRC = "/integration"
 INTEGRATION_DEST = "/config/custom_components/spaboii"
 
@@ -61,7 +62,24 @@ def _all_local_ips() -> list[str]:
     return ips
 
 
-def _try_connect(ip: str, port: int, timeout: float = 0.5) -> tuple[str, int] | None:
+def _load_last_known() -> tuple[str, int] | None:
+    try:
+        with open(LAST_KNOWN_PATH) as f:
+            d = json.load(f)
+            return (d["ip"], int(d["port"]))
+    except Exception:
+        return None
+
+
+def _save_last_known(ip: str, port: int):
+    try:
+        with open(LAST_KNOWN_PATH, "w") as f:
+            json.dump({"ip": ip, "port": port}, f)
+    except Exception:
+        pass
+
+
+def _try_connect(ip: str, port: int, timeout: float = 1.0) -> tuple[str, int] | None:
     try:
         with socket.create_connection((ip, port), timeout=timeout):
             return (ip, port)
@@ -168,12 +186,23 @@ def main():
     scan_ports = [spa_port] if spa_port else KNOWN_SPA_PORTS
 
     if not spa_ip:
-        print("spa_ip not configured — attempting auto-discovery...")
-        result = discover_spa(scan_ports)
-        if not result:
-            print("ERROR: No spa found on the local network. Set spa_ip (and optionally spa_port) in add-on options.")
-            raise SystemExit(1)
-        spa_ip, spa_port = result
+        # Try last known address first to avoid a full subnet scan on every restart
+        last = _load_last_known()
+        if last:
+            candidate_ip, candidate_port = last
+            probe_port = spa_port or candidate_port
+            print(f"Trying last known spa address {candidate_ip}:{probe_port}...")
+            if _try_connect(candidate_ip, probe_port, timeout=3.0):
+                spa_ip, spa_port = candidate_ip, probe_port
+                print(f"Spa found at cached address {spa_ip}:{spa_port}")
+
+        if not spa_ip:
+            print("spa_ip not configured — attempting auto-discovery...")
+            result = discover_spa(scan_ports)
+            if not result:
+                print("ERROR: No spa found on the local network. Set spa_ip (and optionally spa_port) in add-on options.")
+                raise SystemExit(1)
+            spa_ip, spa_port = result
     elif not spa_port:
         # IP known but port not — probe known ports on that specific IP
         print(f"spa_port not set — probing known ports on {spa_ip}...")
@@ -185,6 +214,8 @@ def main():
         if not spa_port:
             print(f"ERROR: Could not reach {spa_ip} on any known port {KNOWN_SPA_PORTS}. Set spa_port manually.")
             raise SystemExit(1)
+
+    _save_last_known(spa_ip, spa_port)
 
     _install_integration()
 

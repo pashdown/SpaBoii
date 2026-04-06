@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.0] - 2026-04-06
+### Fixed
+- Spa discovery: cache last known IP/port to `/data/spa_last_known.json` and try it first on startup — avoids full subnet scan on every restart and is resilient to DHCP address changes within reason
+- Increased per-host connection timeout from 0.5s to 1.0s during full subnet scan to reduce false misses under load
+
 ## [2.0.9] - 2026-04-06
 ### Fixed
 - Converted icon from 8-bit palette PNG to 32-bit RGBA PNG for correct rendering in HA integration card
