@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.5] - 2026-04-06
+### Changed
+- Replaced generated icon with native 256×256 Arctic Spas logo (arcticspas-256.png)
+
 ## [2.0.4] - 2026-04-06
 ### Fixed
 - Resized icon to 256×256 square (transparent padding) to meet HA integration display requirements
