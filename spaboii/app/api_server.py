@@ -2,6 +2,7 @@ import queue
 import threading
 
 from flask import Flask, jsonify, request, abort
+from waitress import serve
 
 app = Flask(__name__)
 
@@ -104,7 +105,7 @@ def start(state_store, cmd_queue, port: int = 8099):
     _cmd_queue = cmd_queue
 
     t = threading.Thread(
-        target=lambda: app.run(host="0.0.0.0", port=port, threaded=True),
+        target=lambda: serve(app, host="0.0.0.0", port=port, threads=4),
         daemon=True,
         name="api-server",
     )

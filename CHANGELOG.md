@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.8] - 2026-04-06
+### Fixed
+- Replaced Flask development server (`app.run`) with Waitress WSGI server — eliminates "development server" warning
+
 ## [2.0.7] - 2026-04-06
 ### Added
 - Added `arcticspas-256.png` as source file in repo root for reference
