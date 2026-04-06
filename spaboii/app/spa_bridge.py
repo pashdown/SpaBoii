@@ -23,7 +23,7 @@ class MessageType(Enum):
 ORP_ID = b'\x10'
 PH_ID = b'\x18'
 
-SPA_PORT = 65534
+DEFAULT_SPA_PORT = 12121
 
 
 def _get_int(b1, b2, b3, b4):
@@ -39,9 +39,10 @@ def _to_signed_byte(value):
 
 
 class SpaBridge:
-    def __init__(self, state_store, cmd_queue, debug: bool = False):
+    def __init__(self, state_store, cmd_queue, spa_port: int = DEFAULT_SPA_PORT, debug: bool = False):
         self.state_store = state_store
         self.cmd_queue = cmd_queue
+        self.spa_port = spa_port
         self.debug = debug
 
         # Packet parser state machine
@@ -260,9 +261,9 @@ class SpaBridge:
         Returns True if CloseService was requested (caller should exit),
         False if the connection dropped (caller should reconnect).
         """
-        print(f"Connecting to spa at {spa_ip}:{SPA_PORT}")
+        print(f"Connecting to spa at {spa_ip}:{self.spa_port}")
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((spa_ip, SPA_PORT))
+        client.connect((spa_ip, self.spa_port))
         client.settimeout(5.0)
         self.state_store.update("connected", True)
         print("Connected to spa")

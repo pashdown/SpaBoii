@@ -11,16 +11,19 @@ from spa_bridge import SpaBridge
 from state_store import StateStore
 
 OPTIONS_PATH = "/data/options.json"
-SPA_PORT = 65534
+
+# Known TCP ports used by Arctic Spa controllers across different models/firmware.
+# 12121 is common on newer units; 65534 on older ones.
+KNOWN_SPA_PORTS = [12121, 65534]
 
 
 def load_options() -> dict:
     if os.path.exists(OPTIONS_PATH):
         with open(OPTIONS_PATH) as f:
             return json.load(f)
-    # Fallback for local development
     return {
         "spa_ip": os.environ.get("SPA_IP", ""),
+        "spa_port": int(os.environ.get("SPA_PORT", "0")),
         "log_level": os.environ.get("LOG_LEVEL", "info"),
     }
 
@@ -34,15 +37,15 @@ def _local_ip() -> str | None:
         return None
 
 
-def _try_connect(ip: str, timeout: float = 0.5) -> str | None:
+def _try_connect(ip: str, port: int, timeout: float = 0.5) -> tuple[str, int] | None:
     try:
-        with socket.create_connection((ip, SPA_PORT), timeout=timeout):
-            return ip
+        with socket.create_connection((ip, port), timeout=timeout):
+            return (ip, port)
     except (socket.timeout, ConnectionRefusedError, OSError):
         return None
 
 
-def discover_spa() -> str | None:
+def discover_spa(ports: list[int]) -> tuple[str, int] | None:
     local = _local_ip()
     if not local:
         print("Could not determine local IP for discovery.")
@@ -50,14 +53,18 @@ def discover_spa() -> str | None:
 
     network = ipaddress.ip_network(f"{local}/24", strict=False)
     candidates = [str(ip) for ip in network.hosts() if str(ip) != local]
-    print(f"Scanning {len(candidates)} addresses on {network} for spa (port {SPA_PORT})...")
+    print(f"Scanning {len(candidates)} addresses on {network} for spa (ports {ports})...")
 
     with ThreadPoolExecutor(max_workers=64) as executor:
-        futures = {executor.submit(_try_connect, ip): ip for ip in candidates}
+        futures = {
+            executor.submit(_try_connect, ip, port): (ip, port)
+            for ip in candidates
+            for port in ports
+        }
         for future in as_completed(futures):
             result = future.result()
             if result:
-                print(f"Found spa at {result}")
+                print(f"Found spa at {result[0]}:{result[1]}")
                 return result
 
     return None
@@ -66,14 +73,29 @@ def discover_spa() -> str | None:
 def main():
     options = load_options()
     spa_ip = (options.get("spa_ip") or "").strip()
+    spa_port = int(options.get("spa_port") or 0)
     log_level = options.get("log_level", "info").strip().lower()
     debug = log_level == "debug"
 
+    scan_ports = [spa_port] if spa_port else KNOWN_SPA_PORTS
+
     if not spa_ip:
         print("spa_ip not configured — attempting auto-discovery...")
-        spa_ip = discover_spa()
-        if not spa_ip:
-            print("ERROR: No spa found on the local network. Set spa_ip in add-on options.")
+        result = discover_spa(scan_ports)
+        if not result:
+            print("ERROR: No spa found on the local network. Set spa_ip (and optionally spa_port) in add-on options.")
+            raise SystemExit(1)
+        spa_ip, spa_port = result
+    elif not spa_port:
+        # IP known but port not — probe known ports on that specific IP
+        print(f"spa_port not set — probing known ports on {spa_ip}...")
+        for port in KNOWN_SPA_PORTS:
+            if _try_connect(spa_ip, port, timeout=2.0):
+                spa_port = port
+                print(f"Spa is listening on port {spa_port}")
+                break
+        if not spa_port:
+            print(f"ERROR: Could not reach {spa_ip} on any known port {KNOWN_SPA_PORTS}. Set spa_port manually.")
             raise SystemExit(1)
 
     state_store = StateStore()
@@ -81,9 +103,9 @@ def main():
 
     start_api_server(state_store, cmd_queue, port=8099)
 
-    bridge = SpaBridge(state_store, cmd_queue, debug=debug)
+    bridge = SpaBridge(state_store, cmd_queue, spa_port=spa_port, debug=debug)
 
-    print(f"SpaBoii starting (spa_ip={spa_ip}, log_level={log_level})")
+    print(f"SpaBoii starting (spa={spa_ip}:{spa_port}, log_level={log_level})")
 
     while True:
         try:

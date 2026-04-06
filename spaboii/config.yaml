@@ -14,7 +14,9 @@ boot: auto
 host_network: true
 options:
   spa_ip: ""
+  spa_port: 0
   log_level: "info"
 schema:
   spa_ip: str?
+  spa_port: int?
   log_level: list(debug|info|warning|error)
