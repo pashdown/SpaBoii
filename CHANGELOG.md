@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.5] - 2026-04-06
+### Fixed
+- Switch entities (pump2, pump3, blower1, blower2) now send LOW (1) for ON instead of HIGH (2) — HIGH is only appropriate for variable-speed pump 1
+- TX COMMAND hex is now logged at info level (not just debug) so the proto bytes are always visible without changing log_level
+
 ## [2.1.4] - 2026-04-06
 ### Fixed
 - `set_lights` was setting an integer on a bool proto field — now uses `True`/`False`

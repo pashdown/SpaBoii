@@ -74,9 +74,9 @@ class SpaBridge:
         buf = spacmd.SerializeToString()
         pckt = LevvenPacket(MessageType.COMMAND.value, buf)
         raw = pckt.serialize()
+        print(f"TX COMMAND ({len(buf)}b proto, {len(raw)}b total): {self._hex(buf)}")
         if self.debug:
-            print(f"TX COMMAND proto ({len(buf)}b): {self._hex(buf)}")
-            print(f"TX Levven packet ({len(raw)}b): {self._hex(raw)}")
+            print(f"TX Levven frame: {self._hex(raw)}")
         client.sendall(raw)
         time.sleep(0.5)
 
@@ -307,13 +307,13 @@ class SpaBridge:
                     pump2 = action.get("pump2")
                     if pump2 is not None:
                         print(f"Command: pump2={pump2}")
-                        spacmd.set_pump_2 = 2 if pump2 == "ON" else 0
+                        spacmd.set_pump_2 = 1 if pump2 == "ON" else 0
                         cmd_sent = True
 
                     pump3 = action.get("pump3")
                     if pump3 is not None:
                         print(f"Command: pump3={pump3}")
-                        spacmd.set_pump_3 = 2 if pump3 == "ON" else 0
+                        spacmd.set_pump_3 = 1 if pump3 == "ON" else 0
                         cmd_sent = True
 
                     lights = action.get("lights")
@@ -325,13 +325,13 @@ class SpaBridge:
                     blower1 = action.get("blower1")
                     if blower1 is not None:
                         print(f"Command: blower1={blower1}")
-                        spacmd.set_blower_1 = 2 if blower1 == "ON" else 0
+                        spacmd.set_blower_1 = 1 if blower1 == "ON" else 0
                         cmd_sent = True
 
                     blower2 = action.get("blower2")
                     if blower2 is not None:
                         print(f"Command: blower2={blower2}")
-                        spacmd.set_blower_2 = 2 if blower2 == "ON" else 0
+                        spacmd.set_blower_2 = 1 if blower2 == "ON" else 0
                         cmd_sent = True
 
                     boost = action.get("boost")
