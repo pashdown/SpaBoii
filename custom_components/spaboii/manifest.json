@@ -4,8 +4,9 @@
   "version": "2.0.1",
   "codeowners": ["@pashdown"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["zeroconf"],
   "requirements": [],
   "iot_class": "local_polling",
-  "homeassistant": "2024.1.0"
+  "homeassistant": "2024.1.0",
+  "zeroconf": ["_spaboii._tcp.local."]
 }

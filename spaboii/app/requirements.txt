@@ -1,3 +1,4 @@
 protobuf==3.20.3
 Flask==3.0.3
 Werkzeug==3.1.0
+zeroconf==0.131.0

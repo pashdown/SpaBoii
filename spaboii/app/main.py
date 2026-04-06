@@ -8,6 +8,8 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from zeroconf import ServiceInfo, Zeroconf
+
 from api_server import start as start_api_server
 from spa_bridge import SpaBridge
 from state_store import StateStore
@@ -99,6 +101,28 @@ def discover_spa(ports: list[int]) -> tuple[str, int] | None:
     return None
 
 
+def _advertise_zeroconf(port: int = 8099):
+    """Advertise the SpaBoii API via mDNS so HA auto-discovers the integration."""
+    try:
+        local_ips = _all_local_ips()
+        if not local_ips:
+            print("Zeroconf: no local IPs found, skipping advertisement")
+            return
+        addresses = [socket.inet_aton(ip) for ip in local_ips]
+        info = ServiceInfo(
+            "_spaboii._tcp.local.",
+            "SpaBoii._spaboii._tcp.local.",
+            addresses=addresses,
+            port=port,
+            properties={"version": "2.0.1"},
+        )
+        zc = Zeroconf()
+        zc.register_service(info)
+        print(f"Zeroconf: advertised SpaBoii on port {port} ({local_ips})")
+    except Exception as e:
+        print(f"Zeroconf advertisement failed (non-fatal): {e}")
+
+
 def main():
     options = load_options()
     spa_ip = (options.get("spa_ip") or "").strip()
@@ -131,6 +155,7 @@ def main():
     cmd_queue = queue.Queue()
 
     start_api_server(state_store, cmd_queue, port=8099)
+    _advertise_zeroconf(port=8099)
 
     bridge = SpaBridge(state_store, cmd_queue, spa_port=spa_port, debug=debug)
 
