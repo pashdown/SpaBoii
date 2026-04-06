@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.9] - 2026-04-06
+### Fixed
+- Converted icon from 8-bit palette PNG to 32-bit RGBA PNG for correct rendering in HA integration card
+
 ## [2.0.8] - 2026-04-06
 ### Fixed
 - Replaced Flask development server (`app.run`) with Waitress WSGI server — eliminates "development server" warning

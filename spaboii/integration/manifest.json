@@ -1,7 +1,7 @@
 {
   "domain": "spaboii",
   "name": "SpaBoii Arctic Spa",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "codeowners": ["@pashdown"],
   "config_flow": true,
   "dependencies": ["zeroconf"],
