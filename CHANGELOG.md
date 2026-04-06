@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.7] - 2026-04-06
+### Fixed
+- Remove unsolicited PING on connect — the spa initiates the handshake; sending first confused it into silence
+- Reduce command-queue poll timeout from 2s to 0.1s so the receive loop reaches `recv()` quickly enough to catch and reply to the spa's initial PING before it times out
+
 ## [2.1.6] - 2026-04-06
 ### Fixed
 - Send PING (0x0A) immediately on connect to initiate the spa session handshake

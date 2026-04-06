@@ -276,7 +276,6 @@ class SpaBridge:
         client.settimeout(5.0)
         self.state_store.update("connected", True)
         print("Connected to spa")
-        self._ping(client, MessageType.PING.value)  # initiate handshake
 
         iteration = 0
         try:
@@ -286,7 +285,7 @@ class SpaBridge:
                 cmd_sent = False
 
                 try:
-                    cmd = self.cmd_queue.get(timeout=2)
+                    cmd = self.cmd_queue.get(timeout=0.1)
                 except queue.Empty:
                     cmd = None
 
