@@ -1,7 +1,7 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_API_SECRET, CONF_HOST, CONF_PORT, DOMAIN
+from .const import CONF_HOST, CONF_PORT, DOMAIN
 from .coordinator import SpaBoiiCoordinator
 
 PLATFORMS = ["climate", "sensor", "binary_sensor", "switch", "select", "button"]
@@ -12,7 +12,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         host=entry.data[CONF_HOST],
         port=entry.data[CONF_PORT],
-        api_secret=entry.data[CONF_API_SECRET],
     )
     await coordinator.async_config_entry_first_refresh()
 

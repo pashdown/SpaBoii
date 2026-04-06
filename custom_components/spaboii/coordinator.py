@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SpaBoiiCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, host: str, port: int, api_secret: str):
+    def __init__(self, hass: HomeAssistant, host: str, port: int):
         super().__init__(
             hass,
             _LOGGER,
@@ -20,14 +20,12 @@ class SpaBoiiCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=SCAN_INTERVAL_SECONDS),
         )
         self._base_url = f"http://{host}:{port}"
-        self._headers = {"Authorization": f"Bearer {api_secret}"}
 
     async def _async_update_data(self) -> dict:
         session = async_get_clientsession(self.hass)
         try:
             async with session.get(
                 f"{self._base_url}/api/state",
-                headers=self._headers,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 if resp.status != 200:
@@ -42,7 +40,6 @@ class SpaBoiiCoordinator(DataUpdateCoordinator):
             async with session.post(
                 f"{self._base_url}/api/command/{endpoint}",
                 json=payload or {},
-                headers=self._headers,
                 timeout=aiohttp.ClientTimeout(total=10),
             ) as resp:
                 if resp.status != 200:

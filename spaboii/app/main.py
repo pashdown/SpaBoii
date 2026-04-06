@@ -1,13 +1,17 @@
+import ipaddress
 import json
 import os
 import queue
+import socket
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from api_server import start as start_api_server
 from spa_bridge import SpaBridge
 from state_store import StateStore
 
 OPTIONS_PATH = "/data/options.json"
+SPA_PORT = 65534
 
 
 def load_options() -> dict:
@@ -17,30 +21,65 @@ def load_options() -> dict:
     # Fallback for local development
     return {
         "spa_ip": os.environ.get("SPA_IP", ""),
-        "api_secret": os.environ.get("API_SECRET", "changeme"),
         "log_level": os.environ.get("LOG_LEVEL", "info"),
     }
 
 
+def _local_ip() -> str | None:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return None
+
+
+def _try_connect(ip: str, timeout: float = 0.5) -> str | None:
+    try:
+        with socket.create_connection((ip, SPA_PORT), timeout=timeout):
+            return ip
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        return None
+
+
+def discover_spa() -> str | None:
+    local = _local_ip()
+    if not local:
+        print("Could not determine local IP for discovery.")
+        return None
+
+    network = ipaddress.ip_network(f"{local}/24", strict=False)
+    candidates = [str(ip) for ip in network.hosts() if str(ip) != local]
+    print(f"Scanning {len(candidates)} addresses on {network} for spa (port {SPA_PORT})...")
+
+    with ThreadPoolExecutor(max_workers=64) as executor:
+        futures = {executor.submit(_try_connect, ip): ip for ip in candidates}
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                print(f"Found spa at {result}")
+                return result
+
+    return None
+
+
 def main():
     options = load_options()
-    spa_ip = options.get("spa_ip", "").strip()
-    api_secret = options.get("api_secret", "").strip()
+    spa_ip = (options.get("spa_ip") or "").strip()
     log_level = options.get("log_level", "info").strip().lower()
     debug = log_level == "debug"
 
     if not spa_ip:
-        print("ERROR: spa_ip is not configured. Set it in the add-on options.")
-        raise SystemExit(1)
-
-    if not api_secret:
-        print("ERROR: api_secret is not configured. Set it in the add-on options.")
-        raise SystemExit(1)
+        print("spa_ip not configured — attempting auto-discovery...")
+        spa_ip = discover_spa()
+        if not spa_ip:
+            print("ERROR: No spa found on the local network. Set spa_ip in add-on options.")
+            raise SystemExit(1)
 
     state_store = StateStore()
     cmd_queue = queue.Queue()
 
-    start_api_server(state_store, cmd_queue, api_secret, port=8099)
+    start_api_server(state_store, cmd_queue, port=8099)
 
     bridge = SpaBridge(state_store, cmd_queue, debug=debug)
 

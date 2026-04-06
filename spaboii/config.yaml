@@ -14,9 +14,7 @@ boot: auto
 host_network: true
 options:
   spa_ip: ""
-  api_secret: ""
   log_level: "info"
 schema:
-  spa_ip: str
-  api_secret: str
+  spa_ip: str?
   log_level: list(debug|info|warning|error)
