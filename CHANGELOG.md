@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.6] - 2026-04-06
+### Fixed
+- Send PING (0x0A) immediately on connect to initiate the spa session handshake
+- Reply to incoming PING packets with a PING — the spa sends a PING expecting a PING back before it starts sending data; ignoring it caused the spa to go silent
+
 ## [2.1.5] - 2026-04-06
 ### Fixed
 - Switch entities (pump2, pump3, blower1, blower2) now send LOW (1) for ON instead of HIGH (2) — HIGH is only appropriate for variable-speed pump 1

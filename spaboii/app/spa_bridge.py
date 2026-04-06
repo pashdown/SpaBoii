@@ -84,7 +84,7 @@ class SpaBridge:
     # Byte-level state machine (ported directly from SpaBoii.py)
     # ------------------------------------------------------------------
 
-    def _handle_byte(self, raw_byte: int):
+    def _handle_byte(self, raw_byte: int, client: socket.socket = None):
         b = _to_signed_byte(raw_byte)
         try:
             s = self._parse_state
@@ -133,7 +133,7 @@ class SpaBridge:
                 self._packet.size = _get_short(self._temp3, b)
                 self._packet.payload = bytearray(self._packet.size)
                 if self._packet.size == 0:
-                    self._process_packet(self._packet)
+                    self._process_packet(self._packet, client)
                     self._parse_state = 0
                     return
                 self._parse_state = 20
@@ -141,7 +141,7 @@ class SpaBridge:
                 self._packet.payload[self._payload_index] = b & 0xFF
                 self._payload_index += 1
                 if self._payload_index >= self._packet.size:
-                    self._process_packet(self._packet)
+                    self._process_packet(self._packet, client)
                     self._parse_state = 0
             else:
                 self._packet = LevvenPacket()
@@ -149,18 +149,22 @@ class SpaBridge:
         except Exception:
             self._parse_state = 0
 
-    def _process_bytes(self, data: bytes):
+    def _process_bytes(self, data: bytes, client: socket.socket = None):
         for b in data:
-            self._handle_byte(b)
+            self._handle_byte(b, client)
 
     # ------------------------------------------------------------------
     # Packet processing: updates StateStore
     # ------------------------------------------------------------------
 
-    def _process_packet(self, packet: LevvenPacket):
+    def _process_packet(self, packet: LevvenPacket, client: socket.socket = None):
         ptype = packet.type
 
         if ptype == MessageType.PING.value:
+            if self.debug:
+                print("RX PING → replying with PING")
+            if client:
+                self._ping(client, MessageType.PING.value)
             return
 
         if self.debug:
@@ -272,6 +276,7 @@ class SpaBridge:
         client.settimeout(5.0)
         self.state_store.update("connected", True)
         print("Connected to spa")
+        self._ping(client, MessageType.PING.value)  # initiate handshake
 
         iteration = 0
         try:
@@ -369,7 +374,7 @@ class SpaBridge:
                         return False
                     if self.debug:
                         print(f"RX ({len(data)}b): {self._hex(data)}")
-                    self._process_bytes(data)
+                    self._process_bytes(data, client)
                 except socket.timeout:
                     continue
                 except Exception as e:
