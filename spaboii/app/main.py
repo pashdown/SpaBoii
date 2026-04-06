@@ -9,7 +9,7 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from zeroconf import InterfaceChoice, ServiceInfo, Zeroconf
+from zeroconf import ServiceInfo, Zeroconf
 
 from api_server import start as start_api_server
 from spa_bridge import SpaBridge
@@ -182,7 +182,7 @@ def _advertise_zeroconf(port: int = 8099):
             port=port,
             properties={"version": "2.0.1"},
         )
-        zc = Zeroconf(interfaces=InterfaceChoice.Default)
+        zc = Zeroconf(interfaces=[ip])
         zc.register_service(info)
         print(f"Zeroconf: advertised SpaBoii on port {port} ({ip})")
     except Exception as e:

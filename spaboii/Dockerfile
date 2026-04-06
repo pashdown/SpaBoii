@@ -3,6 +3,8 @@ FROM $BUILD_FROM
 
 RUN apk add --no-cache gcc musl-dev
 
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
 COPY app/requirements.txt .

@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.1.2] - 2026-04-06
+### Fixed
+- Add `ENV PYTHONUNBUFFERED=1` to Dockerfile so Python crash output is never lost in s6 logs
+- Replace `InterfaceChoice.Default` with direct IP string in Zeroconf constructor — avoids potential import issue with older zeroconf enum API
+
 ## [2.1.1] - 2026-04-06
 ### Fixed
 - Zeroconf advertisement now uses only the default-route interface (`InterfaceChoice.Default`) instead of all interfaces — eliminates ENOKEY errors on WireGuard/VPN interfaces that don't support multicast
