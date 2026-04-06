@@ -338,14 +338,20 @@ class SpaBridge:
                     if cmd_sent:
                         self._send_command(client, spacmd)
 
-                # --- Ping pattern (ported from original) ---
+                # --- Ping pattern ---
+                # iteration 0:  CONFIGURATION (one-time on connect)
+                # every 4th:    INFORMATION (gets pH/ORP)
+                # every 20th:   ONZEN_SETTINGS (gets chlorine range)
+                # otherwise:    LIVE
                 if iteration == 0:
                     self._ping(client, MessageType.CONFIGURATION.value)
                 elif iteration == 4:
                     self._ping(client, MessageType.INFORMATION.value)
                 iteration += 1
 
-                if iteration % 4 == 0:
+                if iteration % 20 == 0:
+                    self._ping(client, MessageType.ONZEN_SETTINGS.value)
+                elif iteration % 4 == 0:
                     self._ping(client, MessageType.INFORMATION.value)
                 else:
                     self._ping(client, MessageType.LIVE.value)
