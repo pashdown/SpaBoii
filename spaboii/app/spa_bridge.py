@@ -218,16 +218,16 @@ class SpaBridge:
         # pH and ORP are encoded as varint fields immediately after the serial number string.
         # ORP_ID (0x10) is field 2's tag; PH_ID (0x18) is field 3's tag.
         orp_index = payload.find(ORP_ID)
-            if orp_index != -1 and len(payload) > orp_index + 5:
-                ph_index = orp_index + 3
-                if payload[ph_index] == PH_ID[0]:
-                    raw_orp = int.from_bytes(payload[orp_index + 1:orp_index + 3], 'little')
-                    raw_ph = int.from_bytes(payload[ph_index + 1:ph_index + 3], 'little')
-                    orp = raw_orp / 2.0
-                    ph = raw_ph / 200.0
-                    self.state_store.update_many({"ph": ph, "orp": orp})
-                    if self.debug:
-                        print(f"pH={ph:.2f}  ORP={orp:.1f}mV")
+        if orp_index != -1 and len(payload) > orp_index + 5:
+            ph_index = orp_index + 3
+            if payload[ph_index] == PH_ID[0]:
+                raw_orp = int.from_bytes(payload[orp_index + 1:orp_index + 3], 'little')
+                raw_ph = int.from_bytes(payload[ph_index + 1:ph_index + 3], 'little')
+                orp = raw_orp / 2.0
+                ph = raw_ph / 200.0
+                self.state_store.update_many({"ph": ph, "orp": orp})
+                if self.debug:
+                    print(f"pH={ph:.2f}  ORP={orp:.1f}mV")
 
     def _handle_live(self, packet: LevvenPacket):
         payload = bytes(packet.payload)
@@ -311,13 +311,13 @@ class SpaBridge:
                     pump2 = action.get("pump2")
                     if pump2 is not None:
                         print(f"Command: pump2={pump2}")
-                        spacmd.set_pump_2 = 1 if pump2 == "ON" else 0
+                        spacmd.set_pump_2 = 2 if pump2 == "ON" else 0
                         cmd_sent = True
 
                     pump3 = action.get("pump3")
                     if pump3 is not None:
                         print(f"Command: pump3={pump3}")
-                        spacmd.set_pump_3 = 1 if pump3 == "ON" else 0
+                        spacmd.set_pump_3 = 2 if pump3 == "ON" else 0
                         cmd_sent = True
 
                     lights = action.get("lights")
@@ -329,13 +329,13 @@ class SpaBridge:
                     blower1 = action.get("blower1")
                     if blower1 is not None:
                         print(f"Command: blower1={blower1}")
-                        spacmd.set_blower_1 = 1 if blower1 == "ON" else 0
+                        spacmd.set_blower_1 = 2 if blower1 == "ON" else 0
                         cmd_sent = True
 
                     blower2 = action.get("blower2")
                     if blower2 is not None:
                         print(f"Command: blower2={blower2}")
-                        spacmd.set_blower_2 = 1 if blower2 == "ON" else 0
+                        spacmd.set_blower_2 = 2 if blower2 == "ON" else 0
                         cmd_sent = True
 
                     boost = action.get("boost")
@@ -345,6 +345,8 @@ class SpaBridge:
                         cmd_sent = True
 
                     if cmd_sent:
+                        if not boost:
+                            spacmd.set_stereo = True
                         self._send_command(client, spacmd)
 
                 # --- Ping pattern ---

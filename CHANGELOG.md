@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.9] - 2026-04-06
+### Fixed
+- Fix IndentationError in `_handle_information` introduced in 2.1.8 — the `orp_index` block was over-indented, causing a Python syntax error that crashed the bridge on startup
+- Pump2/pump3 ON now sends HIGH (2) instead of LOW (1) — confirmed from tcpdump of real app (`18 02 50 01` / `20 02 50 01`)
+- Blower1/blower2 ON now sends HIGH (2) instead of LOW (1) — consistent with pump2/pump3 behavior
+- Every non-boost command now appends `set_stereo = True` (field 10 = 1) — all real-app switch commands include `50 01`; omitting it caused the spa to ignore commands
+
 ## [2.1.8] - 2026-04-06
 ### Fixed
 - Parse ORP and pH from Information packet regardless of payload length — the `>= 100` byte guard was incorrectly blocking parse; ORP and pH fields appear at byte ~38 of the 84-byte payload
