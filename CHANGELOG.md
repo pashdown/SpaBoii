@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.10] - 2026-04-06
+### Added
+- UDP broadcast discovery on port 12122 (`Query,BlueFalls,\n\0` → `Response,BlueFalls,\n`) — spa responds in milliseconds vs. a full TCP subnet scan; runs after the cached-address fast path and before the TCP fallback
+
 ## [2.1.9] - 2026-04-06
 ### Fixed
 - Fix IndentationError in `_handle_information` introduced in 2.1.8 — the `orp_index` block was over-indented, causing a Python syntax error that crashed the bridge on startup

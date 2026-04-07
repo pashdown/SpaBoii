@@ -24,6 +24,10 @@ INTEGRATION_DEST = "/config/custom_components/spaboii"
 # 12121 is common on newer units; 65534 on older ones.
 KNOWN_SPA_PORTS = [12121, 65534]
 
+UDP_DISCOVERY_PORT = 12122
+UDP_QUERY = b"Query,BlueFalls,\n\x00"
+UDP_RESPONSE_PREFIX = b"Response,BlueFalls,"
+
 
 def load_options() -> dict:
     if os.path.exists(OPTIONS_PATH):
@@ -85,6 +89,28 @@ def _try_connect(ip: str, port: int, timeout: float = 1.0) -> tuple[str, int] | 
             return (ip, port)
     except (socket.timeout, ConnectionRefusedError, OSError):
         return None
+
+
+def discover_spa_udp(timeout: float = 3.0) -> str | None:
+    """Broadcast UDP discovery on port 12122. Returns spa IP if found, else None."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            sock.settimeout(timeout)
+            sock.bind(("", 0))
+            sock.sendto(UDP_QUERY, ("255.255.255.255", UDP_DISCOVERY_PORT))
+            print(f"UDP discovery: sent query to 255.255.255.255:{UDP_DISCOVERY_PORT}")
+            while True:
+                try:
+                    data, addr = sock.recvfrom(256)
+                    if data.startswith(UDP_RESPONSE_PREFIX):
+                        print(f"UDP discovery: spa responded from {addr[0]}")
+                        return addr[0]
+                except socket.timeout:
+                    break
+    except Exception as e:
+        print(f"UDP discovery error (non-fatal): {e}")
+    return None
 
 
 def discover_spa(ports: list[int]) -> tuple[str, int] | None:
@@ -210,7 +236,20 @@ def main():
                 print(f"Spa found at cached address {spa_ip}:{spa_port}")
 
         if not spa_ip:
-            print("spa_ip not configured — attempting auto-discovery...")
+            print("spa_ip not configured — attempting UDP broadcast discovery...")
+            found_ip = discover_spa_udp(timeout=3.0)
+            if found_ip:
+                probe_ports = [spa_port] if spa_port else KNOWN_SPA_PORTS
+                for port in probe_ports:
+                    if _try_connect(found_ip, port, timeout=2.0):
+                        spa_ip, spa_port = found_ip, port
+                        print(f"Found spa via UDP at {spa_ip}:{spa_port}")
+                        break
+                if not spa_ip:
+                    print(f"UDP found {found_ip} but could not connect on any known port — falling back to TCP scan")
+
+        if not spa_ip:
+            print("Falling back to TCP subnet scan...")
             result = discover_spa(scan_ports)
             if not result:
                 print("ERROR: No spa found on the local network. Set spa_ip (and optionally spa_port) in add-on options.")
