@@ -215,9 +215,9 @@ class SpaBridge:
             if self.debug:
                 print(f"Pack serial: {spa_info.pack_serial_number}")
 
-        # pH and ORP are embedded at specific byte offsets, not in standard proto fields
-        if len(payload) >= 100:
-            orp_index = payload.find(ORP_ID)
+        # pH and ORP are encoded as varint fields immediately after the serial number string.
+        # ORP_ID (0x10) is field 2's tag; PH_ID (0x18) is field 3's tag.
+        orp_index = payload.find(ORP_ID)
             if orp_index != -1 and len(payload) > orp_index + 5:
                 ph_index = orp_index + 3
                 if payload[ph_index] == PH_ID[0]:

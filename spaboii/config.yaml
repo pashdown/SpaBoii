@@ -1,6 +1,6 @@
 name: SpaBoii
 description: Arctic Spa hot tub bridge for Home Assistant. No MQTT broker required.
-version: "2.1.7"
+version: "2.1.8"
 slug: spaboii
 init: false
 arch:

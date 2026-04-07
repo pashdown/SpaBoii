@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.1.8] - 2026-04-06
+### Fixed
+- Parse ORP and pH from Information packet regardless of payload length — the `>= 100` byte guard was incorrectly blocking parse; ORP and pH fields appear at byte ~38 of the 84-byte payload
+
 ## [2.1.7] - 2026-04-06
 ### Fixed
 - Remove unsolicited PING on connect — the spa initiates the handshake; sending first confused it into silence
